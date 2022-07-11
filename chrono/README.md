@@ -1,3 +1,5 @@
+find **chrono**'s original repository [here](https://github.com/a327ex/chrono)
+
 # chrono 
 
 **chrono** is a timer module for LÖVE. It's a copy of [hump.timer](http://hump.readthedocs.io/en/latest/timer.html) with a few improvements on top.
