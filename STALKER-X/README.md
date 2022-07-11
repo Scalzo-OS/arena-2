@@ -1,3 +1,5 @@
+**STALKER-X** was created by a327ex and it's original repository can be found [here](https://github.com/a327ex/STALKER-X)
+
 **STALKER-X** is a camera module for LÖVE. It provides basic functionalities that a camera should have and is inspired by 
 [hump.camera](http://hump.readthedocs.io/en/latest/camera.html) and [FlxCamera](http://haxeflixel.com/demos/FlxCamera/). The goal
 is to provide enough functions that building something like [in this video](https://www.youtube.com/watch?v=aAKwZt3aXQM)
