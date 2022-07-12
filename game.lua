@@ -6,20 +6,46 @@ particlesystem = require 'particles'
 bullets = require 'bullets'
 Timer = require 'chrono.Timer'
 
-function game.load()
+function game.load(reload, dash, hp, dmg, speed, size, bulletsize, invincibility, range, combou)
     player = {}
-    player.x = centre.x
-    player.y = centre.y
+    player.x = centre.x*3
+    player.y = centre.y*3
     player.speed = 6
     player.r = 9
+    player.reload = 0.2
+    player.reloadtimer = 0
+    player.reloading = false
     player.dash = 100
+    player.dashduration = 0.5
+    player.dashtimer = 0
     player.direction = 0
     player.dashing = false
+    player.candash = true
     player.hpsprite = love.graphics.newImage('sprites/heart.png')
     player.hp = 4
     player.hpsize = 1
     player.hpdirection = 1
+    player.dmg = 1
     player.hpspeed = 0.004
+    player.bulletsize = 3
+    player.bulletspeed = 7
+    player.isinvincible = false
+    player.invincible = 0.3
+    player.invincibletimer = 0
+    player.range = 200
+
+    player.level = {}
+    player.level.reload = 1
+    player.level.dash = 1
+    player.level.hp = 1
+    player.level.dmg = 1
+    player.level.speed = 1
+    player.level.size = 1
+    player.level.bulletsize = 1
+    player.level.bulletspeed = 1
+    player.level.invincibility = 1
+    player.level.range = 1
+    player.level.combo = 1
 
     mouse = {}
 
@@ -45,10 +71,25 @@ function game.load()
     camera_s = {w=200, h=150, x = window.x/window.scale, y = window.y/window.scale}
     camera = Camera(camera_s.w, camera_s.h, camera_s.x, camera_s.y)
     camera:setDeadzone(camera_s.x/3, camera_s.y/3, camera_s.x/3, camera_s.y/3)
+    --camera.draw_deadzone = true
 end
 
 function keydown(key)
     return love.keyboard.isDown(key)
+end
+
+function update_levels()
+    player.level.reload = 1
+    player.level.dash = 1
+    player.level.hp = 1
+    player.level.dmg = 1
+    player.level.speed = 1
+    player.level.size = 1
+    player.level.bulletsize = 1
+    player.level.bulletspeed = 1
+    player.level.invincibility = 1
+    player.level.range = 1
+    player.level.combo = 1
 end
 
 function game.update(dt)
@@ -102,6 +143,31 @@ function game.update(dt)
             {{1, 1}, {1, 1}, {1, 1}, {0, 0.1000}}, 0.1, 0.92)
     end
 
+    if not player.candash then
+        player.dashtimer = player.dashtimer - dt
+    end
+    if player.dashtimer < 0 then
+        player.candash = true
+        player.dashtimer = player.dashduration
+    end
+
+    if player.reloading then
+        player.reloadtimer = player.reloadtimer - dt
+    end
+    if player.reloadtimer < 0 then
+        player.reloading = false
+        player.reloadtimer = player.reload
+    end
+
+    if player.isinvincible then
+        player.invincibletimer = player.invincibletimer - dt
+    end
+    if player.invincibletimer < 0 then
+        player.isinvincible = false
+        player.invincibletimer = player.invincible
+    end
+
+    --player movement
     if not player.dashing then
         if keydown('a') and player.x > player.r then player.x = player.x - player.speed end
         if keydown('d') and player.x < window.x-player.r then player.x = player.x + player.speed end
@@ -119,23 +185,13 @@ function game.update(dt)
         particlesystem.newparticles(math.random(50, 70), player.x, 
         player.y, {1, player.r}, {0, math.random()}, {0, 360}, 
         {{1, 1}, {1, 1}, {1, 1}, {0, 0.4000}}, 0.1, 0.95)
-
     end
 
-    --[[if love.mouse.isDown(1) then
-        x, y = love.mouse.getPosition()
-        x, y = x/window.scale-camera_s.w-29+camera.x, y/window.scale-camera_s.h+camera.y
-        camera:shake(1, 1, 60)
-        direction = math.atan((y-player.y)/(x-player.x))
-        if player.x > x then direction = direction + math.pi end
-        --table.insert(bullets, {player.x, player.y, 3, direction, 12})
+    if love.mouse.isDown(1) and not player.reloading then
+        shoot(love.mouse.getPosition())
+    end
 
-        bullets.newbullet(player.x, player.y, 3, 7, direction, {1, 1, 51/255}, true, false, true)
-
-        particlesystem.newparticles(math.random(5, 10), player.x, player.y, {1, 4}, {1, 5}, {0,2*math.pi}, 
-        {{1, 1}, {1, 1}, {1, 1}, {0, 0.4000}}, 0.1, 0.99)
-    end]]
-
+    --enemy/bullet collision
     enemy = enemies.return_enemies()
     bullet = bullets.return_bullets()
     for i=#bullet ,1, -1 do
@@ -158,7 +214,7 @@ function game.update(dt)
                     enemy[k].flashtimer = 0.2
                     enemy[k].hp = enemy[k].hp - 1
                     if enemy[k].hp <= 0 then
-                        particlesystem.newparticles(math.random(1*combo.counter, 2*combo.counter), enemy[k].x, enemy[k].y, {1, 4}, {1, 5}, {0,2*math.pi}, 
+                        particlesystem.newparticles(math.random(1*combo.counter, 2*combo.counter), enemy[k].x, enemy[k].y, {1, 4}, {1, 3}, {0,2*math.pi}, 
                         {{enemy[k].colour[1]-0.4, enemy[k].colour[1]}, {enemy[k].colour[2]-0.4, enemy[k].colour[2]}, 
                         {enemy[k].colour[3]-0.4, enemy[k].colour[3]}, {0.9, 1}}, 0.1, 0.95)
                         settings.score = settings.score + 100*combo.bonus
@@ -169,7 +225,7 @@ function game.update(dt)
                     bullet[i].hit = true
                 end
             end
-        else
+        elseif not player.isinvincible then
             local x, y, dir = bullet[i].x, bullet[i].y, bullet[i].dir
             distance = {d = window.x, x = window.x, y = window.y}
 
@@ -183,20 +239,22 @@ function game.update(dt)
             end
 
             if math.sqrt((player.x-distance.x)^2+(player.y-distance.y)^2) < player.r+bullet[i].r then
-                player.hp = player.hp -1
+                player.hp = player.hp - 1
+                player.isinvincible = true
                 bullet[i].hit = true
             end
         end
     end
 
     for i=#enemy, 1, -1 do
-        if math.sqrt((player.x-enemy[i].x)^2+(player.y-enemy[i].y)^2) < player.r + enemy[i].r  and not enemy[i].flash then
+        if math.sqrt((player.x-enemy[i].x)^2+(player.y-enemy[i].y)^2) < player.r + enemy[i].r  and not enemy[i].flash and not player.dashing and not player.isinvincible then
             player.hp = player.hp - 1
+            player.isinvincible = true
             enemy[i].flash = true
             enemy[i].flashtimer = 0.2
-            enemy[i].hp = enemy[i].hp - 1
+            enemy[i].hp = enemy[i].hp - player.dmg
             if enemy[i].hp <= 0 then
-                particlesystem.newparticles(math.random(1*combo.counter, 2*combo.counter), enemy[i].x, enemy[i].y, {1, 4}, {1, 5}, {0,2*math.pi}, 
+                particlesystem.newparticles(math.random(1*combo.counter, 2*combo.counter), enemy[i].x, enemy[i].y, {1, 4}, {1, 3}, {0,2*math.pi}, 
                 {{enemy[i].colour[1]-0.4, enemy[i].colour[1]}, {enemy[i].colour[2]-0.4, enemy[i].colour[2]}, 
                 {enemy[i].colour[3]-0.4, enemy[i].colour[3]}, {0.9, 1}}, 0.1, 0.95)
                 settings.score = settings.score + 100*combo.bonus
@@ -207,6 +265,7 @@ function game.update(dt)
         end
     end
 
+    --delete this to disable enemies for testing purposes
     if #enemy == 0 and not settings.waveshow then
         settings.wave = settings.wave + 1
         settings.waveshow = true
@@ -215,7 +274,6 @@ function game.update(dt)
 
     bullets.update_bullets(bullet)
     enemies.update_enemies(enemy)
-
     return 'game'
 end
 
@@ -261,8 +319,30 @@ function newcombo(x, y)
     if colourpick == 3 then colour = {math.random(0.2, 0.6), math.random(0.2, 0.6), 1} end
     table.insert(combo.text, {x = x, y = y, text = combo.bonus, rotation = math.random(-math.pi/12, math.pi/12), colour = colour, 
     font = love.graphics.newFont('MonsterFriendFore.otf', 10+combo.counter*4), timer = 1.5})
+    
     particlesystem.newparticles(math.random(10, 50), x, y, {15, 30}, {4, 8}, {0, 360}, {{colour[1], colour[1]},
     {colour[2], colour[2]}, {colour[3], colour[3]}, {1, 1}}, 0.1, 0.9)
+end
+
+function shoot()
+    x, y = love.mouse.getPosition()
+    x, y = (x-love.graphics.getWidth()/2)/window.scale+camera.x, (y-love.graphics.getHeight()/2)/window.scale+camera.y
+
+    direction = math.atan((y-player.y)/(x-player.x))
+    if player.x > x then direction = direction + math.pi end
+    --px, py = camera:toCameraCoords(player.x, player.y)
+    --[[if px < camera_s.x/3 then direction = direction - math.pi/6 end
+    if px > 2*camera_s.x/3 then direction = direction + math.pi/6 end
+    if py < camera_s.y/3 then direction = direction - math.pi/6 end
+    if py > 2*camera_s.y/3 then direction = direction + math.pi/6 end]]
+
+    bullets.newbullet(player.x, player.y, player.bulletsize, player.bulletspeed, direction, {1, 1, 51/255}, player.range, true, false, true)
+
+    particlesystem.newparticles(math.random(5, 10), player.x, player.y, {1, 4}, {1, 5}, {0,2*math.pi}, 
+    {{1, 1}, {1, 1}, {1, 1}, {0, 0.4000}}, 0.1, 0.99)
+    player.reloading = true
+
+    camera:shake(1, 1, 60)
 end
 
 function game.draw()
@@ -283,10 +363,7 @@ function game.draw()
         love.graphics.rectangle('fill', i*40, i*40, window.x-i*80, window.y-i*80)
     end
 
-    love.graphics.setColor(1, 1, 1, 0.01)
-    love.graphics.circle('fill', player.x, player.y, player.r*2)
     love.graphics.setColor(1, 1, 1)
-    love.graphics.circle('fill', player.x, player.y, player.r)
 
     for i=1, #combo.text do
         love.graphics.setFont(combo.text[i].font)
@@ -297,6 +374,20 @@ function game.draw()
     enemies.draw()
     particlesystem.draw()
     bullets.draw()
+
+    if player.isinvincible then
+        love.graphics.setColor(1, 1, 1, 0.1)
+        love.graphics.circle('fill', player.x, player.y, player.r*2)
+    end
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.circle('fill', player.x, player.y, player.r)
+
+    --[[ DRAW CURSOR
+    x, y = love.mouse.getPosition()
+    x, y = (x-love.graphics.getWidth()/2)/window.scale+camera.x, (y-love.graphics.getHeight()/2)/window.scale+camera.y
+
+    love.graphics.setColor(0, 1, 0)
+    love.graphics.circle('fill', x, y, 15)]]
 
     camera:detach()
     camera:draw()
@@ -326,36 +417,32 @@ function game.draw()
     love.graphics.setLineWidth(4)
     love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle('line', centre.x-150, window.y/window.scale-30, combo.timer*100, 10)
-
-
 end
 
 function game.mousepressed(x, y, button)
     if button == 1 then
-        x, y = love.mouse.getPosition()
-        x, y = x/window.scale-camera_s.w-29+camera.x, y/window.scale-camera_s.h+camera.y
-        camera:shake(1, 1, 60)
-        direction = math.atan((y-player.y)/(x-player.x))
-        if player.x > x then direction = direction + math.pi end
-        --table.insert(bullets, {player.x, player.y, 3, direction, 12})
 
-        bullets.newbullet(player.x, player.y, 3, 7, direction, {1, 1, 51/255}, true, false, true)
-
-        particlesystem.newparticles(math.random(5, 10), player.x, player.y, {1, 4}, {1, 5}, {0,2*math.pi}, 
-        {{1, 1}, {1, 1}, {1, 1}, {0, 0.4000}}, 0.1, 0.99)
+        if not player.reloading then
+            shoot(x, y)
+        end
     elseif button == 2 then
-        x, y = love.mouse.getPosition()
-        x, y = x/window.scale-camera_s.w-29+camera.x, y/window.scale-camera_s.h+camera.y
-        camera:shake(1, 1, 60)
 
-        direction = math.atan((y-player.y)/(x-player.x))
-        if player.x > x then direction = direction + math.pi end
+        if player.candash then
+            --uses an inefficient method in sourcing mx and my
+            x, y = love.mouse.getPosition()
+            x, y = x/window.scale-camera_s.w-29+camera.x, y/window.scale-camera_s.h+camera.y
+            camera:shake(1, 1, 60)
+
+            direction = math.atan((y-player.y)/(x-player.x))
+            if player.x > x then direction = direction + math.pi end
 
 
-        player.speed = player.dash
-        player.direction = direction
-        player.dashing = true
-        timer:tween(0.2, player, {speed = 8}, 'in-linear', function () player.dashing = false;  end)
+            player.speed = player.dash
+            player.direction = direction
+            player.dashing = true
+            timer:tween(0.2, player, {speed = 8}, 'in-linear', function () player.dashing = false;  end)
+            player.candash = false
+        end
     end
 end
 
