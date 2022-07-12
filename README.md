@@ -1,3 +1,4 @@
 # arena-2
 a little sequel that might take a while...
-![shooting while moving](https://user-images.githubusercontent.com/92215010/178388060-1a771bbe-78ae-4d38-87ba-397cc5752811.gif)
+
+![github](https://user-images.githubusercontent.com/92215010/178388596-c3e14df9-62a0-4756-8310-4f7898fa3e67.gif)
