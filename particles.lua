@@ -12,9 +12,10 @@ function particlesystem.update(dt)
             table.remove(particles, i)
 
         else
+            speed = particles[i].speed * 60 * dt
             particles[i].r = particles[i].decay*particles[i].r
-            particles[i].x = particles[i].x + particles[i].speed*math.cos(particles[i].dir)
-            particles[i].y = particles[i].y + particles[i].speed*math.sin(particles[i].dir)
+            particles[i].x = particles[i].x + speed*math.cos(particles[i].dir)*60*dt
+            particles[i].y = particles[i].y + speed*math.sin(particles[i].dir)*60*dt
         end
     end
 end
@@ -23,7 +24,7 @@ function particlesystem.newparticles(amount, x, y, size, speed, direction, colou
     for i=1, amount do
         table.insert(particles, {
             x = x, y = y, r = math.random(size[1], size[2]), speed = math.random()*math.random(speed[1], speed[2]),
-            dir = math.random(0, 360), colour = {math.random(colour[1][1], colour[1][2]),
+            dir = randfloat(direction[1], direction[2]), colour = {math.random(colour[1][1], colour[1][2]),
             math.random(colour[2][1], colour[2][2]), math.random(colour[3][1], colour[3][1]),
             math.random(colour[4][1], colour[4][2])}, threshold = threshold, decay = decay
         })
