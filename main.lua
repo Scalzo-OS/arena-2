@@ -1,5 +1,6 @@
 game = require 'game'
 Timer = require 'chrono.Timer'
+upgrades = require 'upgrades'
 
 --slightly changed love.run to reduce stuttering
 function love.run()
@@ -53,31 +54,68 @@ function love.load()
     window = {}
     window.x, window.y = love.graphics.getDimensions()
     window.scale = 3
-    centre = {}
+    centre = {} 
     centre.x, centre.y = window.x/window.scale/2, window.y/window.scale/2
     timer = Timer()
 
     --room manager
     current_room = 'game'
     prev_room = ''
-    Paused = true
     love.graphics.setDefaultFilter('nearest', 'nearest')
     canvas = love.graphics.newCanvas(window.x/window.scale, window.y/window.scale)
+    init = false
+    transitioning = false
+    opacity = {o = 0}
 
     font = {}
     font.scorefont = love.graphics.newFont('MonsterFriendFore.otf', 10)
+    font.descfont = love.graphics.newFont('MonsterFriendFore.otf', 10)
     font.wavefont = love.graphics.newFont('MonsterFriendFore.otf', 60)
-
+    font.upgradetitlefont = love.graphics.newFont('MonsterFriendFore.otf', 20)
+    font.upgradetitlefont2 = love.graphics.newFont('MonsterFriendFore.otf', 21)
+    font.boughtfont = love.graphics.newFont('MonsterFriendFore.otf', 20)
+    font.cashfont = love.graphics.newFont('MonsterFriendFore.otf', 36)
     _G[current_room].load()
+end
+
+function intable(set, key)
+    return set[key] ~= nil
+end
+
+function table.copy(t)
+    local t2 = {};
+    for k,v in pairs(t) do
+      if type(v) == "table" then
+          t2[k] = table.copy(v);
+      else
+          t2[k] = v;
+      end
+    end
+    return t2;
+  end
+
+function randfloat(m, n)
+    if m == n then return m
+    else return math.random()+math.random(m, n-1) end
+end
+
+function Torad(x)
+    return x*math.pi/180
 end
 
 function love.update(dt)
     timer:update(dt)
-    if current_room then
-        if Paused then prev_room = _G[current_room].update(dt) end
+    if current_room and not transitioning then
+        prev_room = _G[current_room].update(dt)
         if prev_room ~= current_room then
-            current_room = prev_room
-            _G[current_room].load()
+            transitioning = true
+            _G[prev_room].load()
+            timer:after(0.3, function ()
+                timer:tween(0.5, opacity, {o = 1}, 'in-linear', function () 
+                    current_room = prev_room
+                    transitioning = false
+                timer:tween(0.5, opacity, {o = 0}, 'in-linear') end)
+            end)
         end
     end
 end
@@ -94,6 +132,9 @@ function love.draw()
     love.graphics.setBlendMode('alpha', 'premultiplied')
     love.graphics.draw(canvas, 0, 0, 0, window.scale, window.scale )
     love.graphics.setBlendMode('alpha')
+
+    love.graphics.setColor(0, 0, 0, opacity.o)
+    love.graphics.rectangle('fill', 0, 0, window.x, window.y)
 end
 
 function love.keypressed(key)
